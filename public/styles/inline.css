@@ -63,15 +63,14 @@ body {
     background: #ececec;
 }
 
-.btnSaveWrapper {
+#btnSave {
     width: 100%;
     background: blue;
     height: 50px;
     color: white;
     text-align: center;
     line-height: 50px;
-}
-#btnSave {
+    cursor: pointer;
 }
 
 .header {
