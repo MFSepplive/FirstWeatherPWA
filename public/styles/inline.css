@@ -72,6 +72,15 @@ body {
     line-height: 50px;
     cursor: pointer;
 }
+#btnLogin {
+    width: 100%;
+    background: red;
+    height: 50px;
+    color: white;
+    text-align: center;
+    line-height: 50px;
+    cursor: pointer;
+}
 
 .header {
     width: 100%;

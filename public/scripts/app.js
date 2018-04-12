@@ -16,6 +16,7 @@
     'use strict';
 
     var app = {
+        isLoggedIn: false,
         isLoading: true,
         visibleCards: {},
         selectedCities: [],
@@ -23,6 +24,9 @@
         cardTemplate: document.querySelector('.cardTemplate'),
         container: document.querySelector('.main'),
         addDialog: document.querySelector('.dialog-container'),
+        loggedOutDialog: document.querySelector(
+            '.dialog-container.dialog-logged-out'
+        ),
         daysOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     };
 
@@ -89,6 +93,7 @@
         app.selectedCities.push({ key: key, label: label });
         app.saveSelectedCities();
         app.toggleAddDialog(false);
+        sendBroadcast({ message: 'addCity', city: { key: key, label: label } });
     });
 
     document
@@ -96,6 +101,13 @@
         .addEventListener('click', function() {
             // Close the add new city dialog
             app.toggleAddDialog(false);
+        });
+
+    document
+        .getElementById('btnLoggedOut')
+        .addEventListener('click', function() {
+            // Close the add new city dialog
+            app.toggleLoggedOutDialog(false);
         });
 
     /*****************************************************************************
@@ -110,6 +122,14 @@
             app.addDialog.classList.add('dialog-container--visible');
         } else {
             app.addDialog.classList.remove('dialog-container--visible');
+        }
+    };
+
+    app.toggleLoggedOutDialog = function(visible) {
+        if (visible) {
+            app.loggedOutDialog.classList.add('dialog-container--visible');
+        } else {
+            app.loggedOutDialog.classList.remove('dialog-container--visible');
         }
     };
 
@@ -412,6 +432,51 @@
             .register('./service-worker.js')
             .then(function() {
                 console.log('Service Worker Registered');
+                registerEventListenerMessage();
             });
+    }
+
+    function registerEventListenerMessage() {
+        navigator.serviceWorker.addEventListener('message', function(event) {
+            var data = event.data;
+            if (data.message.message === 'loggingIn') {
+                document.getElementById('btnLogin').innerHTML = 'Logout';
+                app.isLoggedIn = true;
+            } else if (data.message.message === 'loggingOut') {
+                document.getElementById('btnLogin').innerHTML = 'Login';
+                app.isLoggedIn = false;
+                app.toggleLoggedOutDialog(true);
+            } else if (data.message.message === 'addCity') {
+                var city = data.message.city;
+
+                app.getForecast(city.key, city.label);
+                app.selectedCities.push(city);
+                app.saveSelectedCities();
+            }
+        });
+    }
+
+    var loginButton = document.getElementById('btnLogin');
+    loginButton.addEventListener('click', function() {
+        if (app.isLoggedIn === false) {
+            app.isLoggedIn = true;
+            document.getElementById('btnLogin').innerHTML = 'Logout';
+            sendBroadcast({ message: 'loggingIn' });
+        } else if (app.isLoggedIn === true) {
+            app.isLoggedIn = false;
+            document.getElementById('btnLogin').innerHTML = 'Login';
+            sendBroadcast({ message: 'loggingOut' });
+        }
+    });
+
+    function sendBroadcast(data = null) {
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                message: data.message,
+                city: data.city
+            });
+        } else {
+            console.log('No active ServiceWorker');
+        }
     }
 })();
